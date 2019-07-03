@@ -11,10 +11,12 @@ pandas = "*"
 tensorflow-gpu = "*"
 matplotlib = "*"
 seaborn = "*"
-jupyterlab = "*"
+jupyterlab = "~=0.7"
 gensim = "*"
 scikit-learn = "*"
 keras = "*"
+googlemaps = "*"
+python-dotenv = "*"
 
 [requires]
 python_version = "3.7"
