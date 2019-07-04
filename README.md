@@ -2,6 +2,12 @@
 ## 時間表
 > https://docs.google.com/spreadsheets/d/1VIjkSkHaKyyWUgojbz2mj1N6KN3iev-BVKLWan3W66E/edit#gid=0
 
+### 日程
+* 0701: DNN + CNN練習
+* 0702: DNN + 土地(了解特徵)
+* 0703: 土地(串基礎模型) + RNN
+* 0704: RNN + 土地(改善模型), element-wise
+
 ## 使用到的套件
 可以參考以上的Pipfile
 
