@@ -18,6 +18,7 @@ keras = "*"
 googlemaps = "*"
 python-dotenv = "*"
 xlrd = "*"
+pillow = "*"
 
 [requires]
 python_version = "3.7"
