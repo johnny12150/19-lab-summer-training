@@ -27,3 +27,7 @@ cuda, cuDNN跟Node.js一樣直接裝在全域(global)
 * jupyterlab-go-to-definition
 * nbdime: 比較不同commit的ipynb的差異
 * jupyterlab-variableInspector: 在jupyter lab內觀察變數的內容
+
+### Jupyter使用
+1. remote server  
+`pipenv run jupyter lab --ip=0.0.0.0  --no-browser`
