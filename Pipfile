@@ -19,6 +19,9 @@ googlemaps = "*"
 python-dotenv = "*"
 xlrd = "*"
 pillow = "*"
+gym = "*"
+pyglet = "*"
+cloudpickle = "*"
 
 [requires]
 python_version = "3.7"
