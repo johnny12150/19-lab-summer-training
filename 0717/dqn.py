@@ -9,6 +9,8 @@ from keras.optimizers import Adam
 
 EPISODES = 300
 
+# https://keon.io/deep-q-learning/
+
 class DQNAgent:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
