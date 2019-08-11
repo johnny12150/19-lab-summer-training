@@ -23,6 +23,8 @@ gym = "*"
 pyglet = "*"
 cloudpickle = "*"
 beautifulsoup4 = "*"
+graphviz = "*"
+pydot = "*"
 
 [requires]
 python_version = "3.7"
