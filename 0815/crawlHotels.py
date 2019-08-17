@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import time
 import json
 
-
 def get_hotel_detail(url):
     time.sleep(2)
 
@@ -109,4 +108,4 @@ for k in range(0, 30):
     all_data = all_data + hotels_data
 
 data_df = pd.DataFrame.from_dict(all_data)
-data_df.to_csv('./tapei_tripadvisor_top600.csv', index=False, encoding='utf_8_sig')
+data_df.to_csv('./tapei_tripadvisor_top900.csv', index=False, encoding='utf_8_sig')
