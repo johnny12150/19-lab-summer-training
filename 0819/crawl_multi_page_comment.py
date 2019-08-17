@@ -16,28 +16,24 @@ def get_comments(url_list):
         # web.implicitly_wait(15)
         web.get(url)
         soup = BeautifulSoup(web.page_source, 'html.parser')
-        # 能不能換頁 (span的表示不能換頁)
-        # next_page = soup.select('a.ui_button.nav.next.primary')
-        # strict mode
-        next_page = soup.select('a[class="ui_button nav next primary"]')
-        previous_page = soup.select('.nav previous ui_button secondary')
 
         # 確認留言頁數
-
-        # 留言換頁規則
+        lat_page = soup.select('a.pageNum.last')
+        if len(lat_page) > 0:
+            # 新版頁面
+            max_page = int(lat_page[0].get('data-page-number'))
+        else:
+            # 考慮舊版頁面
+            max_page = int(soup.select('a.pageNum')[-1].get_text())
 
         page_count = 1
         try:
             # 如果還能換頁
             while 'Hotel_Review' in soup.select('a.ui_button.nav.next.primary')[0].get('href'):
-                print(soup.select('a.ui_button.nav.next.primary')[0].get('href'))
                 page_count += 1
                 # 確保網頁的ui已經跑完
                 web.implicitly_wait(2)
-                # 點擊下一頁
-                # web.find_element_by_css_selector('a.ui_button.nav.next.primary').click()
-                # 重新讀取網頁內容
-                # soup = BeautifulSoup(web.page_source, 'html.parser')
+
                 review_section = soup.select('#REVIEWS')
                 # 這頁有幾筆評論
                 user_comments_old = soup.select('.hotels-community-tab-common-Card__card--ihfZB.hotels-community-tab-common-Card__section--4r93H')
@@ -47,13 +43,20 @@ def get_comments(url_list):
                     print(len(user_comments_old))
                 if len(user_comments_new) > 0:
                     for j, comment in enumerate(user_comments_new):
+                        # 每則評論的標題
                         print(comment.select('span.noQuotes')[0].get_text())
 
-                web.get('https://www.tripadvisor.com.tw' + soup.select('a.ui_button.nav.next.primary')[0].get('href'))
-                soup = BeautifulSoup(web.page_source, 'html.parser')
+                if page_count == max_page:
+                    print('總評論頁數: ' + str(page_count))
+                    break
+                else:
+                    # 留言換頁規則
+                    web.get('https://www.tripadvisor.com.tw' + soup.select('a.ui_button.nav.next.primary')[0].get('href'))
+                    # 取得新頁面的版面配置
+                    soup = BeautifulSoup(web.page_source, 'html.parser')
 
         except:
-            print('總評論頁數: ' + str(page_count))
+            print('超過總評論頁數: ' + str(page_count))
             break
 
     web.close()
