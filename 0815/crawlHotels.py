@@ -6,11 +6,8 @@ import json
 
 def get_hotel_detail(url):
     time.sleep(2)
-
     resp = requests.get(url)
-
     soup = BeautifulSoup(resp.text, 'html.parser')
-
     meta_data = soup.select('script[type="application/ld+json"]')
 
     # 回傳飯店小細節的text(可以parser成json)
@@ -33,6 +30,8 @@ def get_services(url):
     #     for data in service_data:
     #         service_data_list.append(data.get('data-csrprops'))
 
+    # todo: 考量新的版面
+
     if len(service_data) > 0:
         # 設施
         for i, service in enumerate(service_data[0].select('.hotels-hr-about-amenities-Amenity__amenity--3fbBj')):
@@ -50,7 +49,6 @@ def get_hotel(url):
     time.sleep(2)
     uri_list = []
     resp = requests.get(url)
-
     soup = BeautifulSoup(resp.text, 'html.parser')
 
     # imgs = soup.select('div.aspect.is-hidden-tablet > div.inner')
@@ -70,21 +68,23 @@ def get_hotel(url):
             'uri': 'https://www.tripadvisor.com.tw' + title.get('href')
         }
 
+        # todo: 考量新版介面
         # 根據uri抓飯店細節
         per_hotel_json = json.loads(get_hotel_detail(data['uri']))
+        data['hotel_address'] = per_hotel_json['address']['streetAddress']
         try:
-            data['hotel_address'] = per_hotel_json['address']['streetAddress']
             data['avg_rating'] = per_hotel_json['aggregateRating']['ratingValue']
             data['comment_count'] = per_hotel_json['aggregateRating']['reviewCount']
             data['offical_img_uri'] = per_hotel_json['image']
         except:
+            # 真的沒有這些資料
             print('版面異動導致抓取失敗，略過...')
 
         try:
             # 抓飯店關於service的內容
             facility_list, service_list = get_services(data['uri'])
         except:
-            print('版面異動導致抓取失敗，略過...')
+            print('版面異動導致抓取service/ facility失敗，略過...')
         data['facility'] = ', '.join(facility_list)
         data['room'] = ', '.join(service_list)
 
@@ -101,11 +101,15 @@ def get_hotel(url):
     return uri_list, data_list
 
 
-url_list = ['https://www.tripadvisor.com.tw/Hotels-g293913-oa{}-Taipei-Hotels.html'.format(str(i)) for i in range(0, 1200, 30)]
+url_list_taipei = ['https://www.tripadvisor.com.tw/Hotels-g293913-oa{}-Taipei-Hotels.html'.format(str(i)) for i in range(0, 1200, 30)]
+url_list_new_taipei = ['https://www.tripadvisor.com.tw/Hotels-g1432365-oa{}-New_Taipei-Hotels.html'.format(str(i)) for i in range(0, 600, 30)]
+url_list_taoyuan = ['https://www.tripadvisor.com.tw/Hotels-g297912-oa{}-Taoyuan-Hotels.html'.format(str(i)) for i in range(0, 240, 30)]
+url_list = ['https://www.tripadvisor.com.tw/Hotels-g297906-oa{}-Hsinchu-Hotels.html'.format(str(i)) for i in range(0, 90, 30)]
 all_data = []
-for k in range(0, 30):
+
+for k in range(0, 3):
     hotel_url, hotels_data = get_hotel(url_list[k])
     all_data = all_data + hotels_data
 
 data_df = pd.DataFrame.from_dict(all_data)
-data_df.to_csv('./tapei_tripadvisor_top900.csv', index=False, encoding='utf_8_sig')
+data_df.to_csv('./Hsinchu_tripadvisor_top180.csv', index=False, encoding='utf_8_sig')
