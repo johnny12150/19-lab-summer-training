@@ -3,6 +3,7 @@ import json
 from pandas.io.json import json_normalize
 
 df = pd.read_json('./data_100000.json')
+df.to_csv('', index=False, encoding='utf_8_sig')
 print("RAM用量: "+ str(df.memory_usage(index=True).sum()))
 print(df.info())
 
