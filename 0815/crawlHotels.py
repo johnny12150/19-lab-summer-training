@@ -3,15 +3,23 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import time
 import json
+import re
 
 def get_hotel_detail(url):
     time.sleep(2)
     resp = requests.get(url)
     soup = BeautifulSoup(resp.text, 'html.parser')
     meta_data = soup.select('script[type="application/ld+json"]')
+    try:
+    # 幾星飯店
+        hotel_star = soup.select('.hotels-hr-about-layout-TextItem__textitem--2JToc')[0].span.get('class')
+        hotel_star_str = re.findall('star_\d+', ''.join(hotel_star))
+        hotel_star_int = int(hotel_star_str[0].split('_')[1]) / 10
+    except:
+        hotel_star_int = None
 
     # 回傳飯店小細節的text(可以parser成json)
-    return meta_data[0].get_text()
+    return meta_data[0].get_text(), hotel_star_int
 
 
 def get_services(url):
@@ -21,16 +29,20 @@ def get_services(url):
     # service_data_old = soup.select('div[class="common-ssronly-CsrPortal__portal--2v9IC"]')
     service_data = soup.select('.hotels-hr-about-amenities-AmenityGroup__amenitiesList--3MdFn')
     service_data_new = soup.select('div.amenityCol')
-    #     print(len(service_data))
+    meta_data = soup.select('script[type="application/ld+json"]')
 
     service_list = []
     facility_list = []
-    service_data_list = []
 
-    #     for data in service_data:
-    #         service_data_list.append(data.get('data-csrprops'))
+    try:
+    # 幾星飯店
+        hotel_star = soup.select('.hotels-hr-about-layout-TextItem__textitem--2JToc')[0].span.get('class')
+        hotel_star_str = re.findall('star_\d+', ''.join(hotel_star))
+        hotel_star_int = int(hotel_star_str[0].split('_')[1]) / 10
+    except:
+        hotel_star_int = None
 
-    # todo: 考量新的版面
+    # 考量新的版面
     if len(service_data_new) > 0:
         # 客房類型
         for i, room in enumerate(service_data_new):
@@ -40,7 +52,6 @@ def get_services(url):
         # 服務/ 特色
         for i, service in enumerate(service_data_new[0].select('.sub_content.ui_columns.is-multiline.is-gapless.is-mobile')):
             service_list.append(service.select('.entry.ui_column.is-4-tablet.is-6-mobile.is-4-desktop')[0].get_text())
-
 
     # 舊版介面
     if len(service_data) > 0:
@@ -52,7 +63,8 @@ def get_services(url):
         for j, room in enumerate(service_data[1].select('.hotels-hr-about-amenities-Amenity__amenity--3fbBj')):
             service_list.append(room.get_text())
 
-    return service_list, facility_list
+    # 回傳飯店小細節的text(可以parser成json)
+    return service_list, facility_list, meta_data[0].get_text(), hotel_star_int
 
 
 def get_hotel(url):
@@ -66,6 +78,9 @@ def get_hotel(url):
     titles = soup.select('div.listing_title > a[target="_blank"]')
     paimings = soup.select('div.popindex')  # 排名
     prices = soup.select('div[data-sizegroup="mini-meta-price"]')
+    # metadata
+    metadata = soup.select('#map_wc_dusty_bridge > div')
+    hotel30_data = json.loads(metadata[1].get('data-hotels-data'))
 
     data_list = []
 
@@ -76,12 +91,21 @@ def get_hotel(url):
             'title': title.get_text(),
             'paiming': paiming.get_text(),
             'recommend_price': price.get_text(),  # tripadviosr推薦的訂房網站價格，不一定最低
-            'uri': 'https://www.tripadvisor.com.tw' + title.get('href')
+            'uri': 'https://www.tripadvisor.com.tw' + title.get('href'),
         }
 
+        try:
+            data['lat'] = hotel30_data['hotels'][i]['geoPoint']['latitude']
+            data['lng'] = hotel30_data['hotels'][i]['geoPoint']['longitude']
+        except:
+            data['lat'] = None
+            data['lng'] = None
+
         # 根據uri抓飯店細節 (新舊版介面共用)
-        per_hotel_json = json.loads(get_hotel_detail(data['uri']))
+        facility_list, service_list, per_hotel_json, stars = get_services(data['uri'])
+        per_hotel_json = json.loads(per_hotel_json)
         data['hotel_address'] = per_hotel_json['address']['streetAddress']
+        data['hotel_star'] = stars
         try:
             data['price_range'] = per_hotel_json['priceRange'].split(' (根據標準客房的平均房價)')[0]
             data['avg_rating'] = per_hotel_json['aggregateRating']['ratingValue']
@@ -91,13 +115,13 @@ def get_hotel(url):
             # 真的沒有這些資料
             print('版面異動導致抓取失敗，略過...')
 
-        try:
-            # 抓飯店關於service的內容
-            facility_list, service_list = get_services(data['uri'])
-        except:
-            print('版面異動導致抓取service/ facility失敗，略過...')
-            facility_list = []
-            service_list = []
+        # try:
+        #     # 抓飯店關於service的內容
+        #     facility_list, service_list = get_services(data['uri'])
+        # except:
+        #     print('版面異動導致抓取service/ facility失敗，略過...')
+        #     facility_list = []
+        #     service_list = []
 
         data['facility'] = ', '.join(facility_list)
         data['room'] = ', '.join(service_list)
@@ -106,8 +130,6 @@ def get_hotel(url):
         if (get_agoda):
             # agoda有可能不在其他網站名單內
             data['agoda_price'] = get_agoda[0].find_next_siblings('div')[0].get_text()
-
-        #         print(data)
 
         uri_list.append(data['uri'])
         data_list.append(data)
@@ -124,9 +146,9 @@ url_list_Taitung =['https://www.tripadvisor.com.tw/Hotels-g304163-oa{}-Taitung-H
 url_list =['https://www.tripadvisor.com.tw/Hotels-g297907-oa{}-Hualien-Hotels.html'.format(str(i)) for i in range(0, 2220, 30)]
 all_data = []
 
-for k in range(0, 50):
+for k in range(0, 30):
     hotel_url, hotels_data = get_hotel(url_list[k])
     all_data = all_data + hotels_data
 
 data_df = pd.DataFrame.from_dict(all_data)
-data_df.to_csv('./Hualien_tripadvisor_top1500.csv', index=False, encoding='utf_8_sig')
+data_df.to_csv('./Hualien_tripadvisor_top180.csv', index=False, encoding='utf_8_sig')
