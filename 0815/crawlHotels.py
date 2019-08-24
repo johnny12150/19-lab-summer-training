@@ -5,22 +5,6 @@ import time
 import json
 import re
 
-def get_hotel_detail(url):
-    time.sleep(2)
-    resp = requests.get(url)
-    soup = BeautifulSoup(resp.text, 'html.parser')
-    meta_data = soup.select('script[type="application/ld+json"]')
-    try:
-    # 幾星飯店
-        hotel_star = soup.select('.hotels-hr-about-layout-TextItem__textitem--2JToc')[0].span.get('class')
-        hotel_star_str = re.findall('star_\d+', ''.join(hotel_star))
-        hotel_star_int = int(hotel_star_str[0].split('_')[1]) / 10
-    except:
-        hotel_star_int = None
-
-    # 回傳飯店小細節的text(可以parser成json)
-    return meta_data[0].get_text(), hotel_star_int
-
 
 def get_services(url):
     time.sleep(2)
@@ -59,12 +43,24 @@ def get_services(url):
         for i, service in enumerate(service_data[0].select('.hotels-hr-about-amenities-Amenity__amenity--3fbBj')):
             facility_list.append(service.get_text())
 
-        # 房間特色
-        for j, room in enumerate(service_data[1].select('.hotels-hr-about-amenities-Amenity__amenity--3fbBj')):
-            service_list.append(room.get_text())
+        if len(service_data) > 1:
+            # 房間特色
+            for j, room in enumerate(service_data[1].select('.hotels-hr-about-amenities-Amenity__amenity--3fbBj')):
+                service_list.append(room.get_text())
+
+    try:
+        hotel_data = json.loads(meta_data[0].get_text())
+    except:
+        hotel_data = {}
+
+    try:
+        # 飯店國家與縣市
+        hotel_city = json.loads(meta_data[1].get_text())
+    except:
+        hotel_city = {}
 
     # 回傳飯店小細節的text(可以parser成json)
-    return service_list, facility_list, meta_data[0].get_text(), hotel_star_int
+    return service_list, facility_list, hotel_data, hotel_star_int, hotel_city
 
 
 def get_hotel(url):
@@ -74,7 +70,6 @@ def get_hotel(url):
     resp = requests.get(url)
     soup = BeautifulSoup(resp.text, 'html.parser')
 
-    # imgs = soup.select('div.aspect.is-hidden-tablet > div.inner')
     titles = soup.select('div.listing_title > a[target="_blank"]')
     paimings = soup.select('div.popindex')  # 排名
     prices = soup.select('div[data-sizegroup="mini-meta-price"]')
@@ -102,10 +97,19 @@ def get_hotel(url):
             data['lng'] = None
 
         # 根據uri抓飯店細節 (新舊版介面共用)
-        facility_list, service_list, per_hotel_json, stars = get_services(data['uri'])
-        per_hotel_json = json.loads(per_hotel_json)
-        data['hotel_address'] = per_hotel_json['address']['streetAddress']
-        data['hotel_star'] = stars
+        facility_list, service_list, per_hotel_json, stars, city = get_services(data['uri'])
+        try:
+            data['hotel_address'] = per_hotel_json['address']['streetAddress']
+            data['hotel_star'] = stars
+        except:
+            pass
+
+        try:
+            data['hotel_city'] = city['itemListElement'][2]['item']['name']
+            data['hotel_section'] = city['itemListElement'][3]['item']['name']
+        except:
+            pass
+
         try:
             data['price_range'] = per_hotel_json['priceRange'].split(' (根據標準客房的平均房價)')[0]
             data['avg_rating'] = per_hotel_json['aggregateRating']['ratingValue']
@@ -115,19 +119,11 @@ def get_hotel(url):
             # 真的沒有這些資料
             print('版面異動導致抓取失敗，略過...')
 
-        # try:
-        #     # 抓飯店關於service的內容
-        #     facility_list, service_list = get_services(data['uri'])
-        # except:
-        #     print('版面異動導致抓取service/ facility失敗，略過...')
-        #     facility_list = []
-        #     service_list = []
-
         data['facility'] = ', '.join(facility_list)
         data['room'] = ', '.join(service_list)
 
         get_agoda = prices[i].parent.parent.parent.parent.find_next_siblings('div')[0].select('div[title="Agoda.com"]')
-        if (get_agoda):
+        if get_agoda:
             # agoda有可能不在其他網站名單內
             data['agoda_price'] = get_agoda[0].find_next_siblings('div')[0].get_text()
 
@@ -146,9 +142,9 @@ url_list_Taitung =['https://www.tripadvisor.com.tw/Hotels-g304163-oa{}-Taitung-H
 url_list =['https://www.tripadvisor.com.tw/Hotels-g297907-oa{}-Hualien-Hotels.html'.format(str(i)) for i in range(0, 2220, 30)]
 all_data = []
 
-for k in range(0, 30):
+for k in range(0, 10):
     hotel_url, hotels_data = get_hotel(url_list[k])
     all_data = all_data + hotels_data
 
 data_df = pd.DataFrame.from_dict(all_data)
-data_df.to_csv('./Hualien_tripadvisor_top180.csv', index=False, encoding='utf_8_sig')
+data_df.to_csv('./Hualien_tripadvisor_top30.csv', index=False, encoding='utf_8_sig')
