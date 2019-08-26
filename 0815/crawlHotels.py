@@ -185,9 +185,9 @@ url_list_Hualien =['https://www.tripadvisor.com.tw/Hotels-g297907-oa{}-Hualien-H
 url_list_Taichung = ['https://www.tripadvisor.com.tw/Hotels-g297910-oa{}-Taichung-Hotels.html'.format(str(i)) for i in range(0, 870, 30)]
 all_data = []
 
-for k in range(0, 30):
-    hotel_url, hotels_data = get_hotel(url_list_Taitung[k])
+for k in range(0, 15):
+    hotel_url, hotels_data = get_hotel(url_list_new_taipei[k])
     all_data = all_data + hotels_data
 
 data_df = pd.DataFrame.from_dict(all_data)
-data_df.to_csv('./Taitung_tripadvisor_top500.csv', index=False, encoding='utf_8_sig')
+data_df.to_csv('./new_taipei_tripadvisor_top500.csv', index=False, encoding='utf_8_sig')
