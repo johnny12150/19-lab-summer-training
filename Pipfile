@@ -25,6 +25,7 @@ cloudpickle = "*"
 beautifulsoup4 = "*"
 graphviz = "*"
 pydot = "*"
+plotly = "*"
 
 [requires]
 python_version = "3.7"
