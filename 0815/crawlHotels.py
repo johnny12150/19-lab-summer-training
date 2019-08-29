@@ -186,11 +186,14 @@ url_list_Taichung = ['https://www.tripadvisor.com.tw/Hotels-g297910-oa{}-Taichun
 url_list_Kaohsiung = ['https://www.tripadvisor.com.tw/Hotels-g297908-oa{}-Kaohsiung-Hotels.html'.format(str(i)) for i in range(0, 660, 30)]
 url_list_Tainan = ['https://www.tripadvisor.com.tw/Hotels-g293912-oa{}-Kaohsiung-Hotels.html'.format(str(i)) for i in range(0, 1140, 30)]
 url_list_Yilan = ['https://www.tripadvisor.com.tw/Hotels-g608526-oa{}-Yilan-Hotels.html'.format(str(i)) for i in range(0, 1770, 30)]
+url_list_Nantou = ['https://www.tripadvisor.com.tw/Hotels-g304160-oa{}-Nantou-Hotels.html'.format(str(i)) for i in range(0, 990, 30)]
+url_list_Keelung = ['https://www.tripadvisor.com.tw/Hotels-g317130-oa{}-Keelung-Hotels.html'.format(str(i)) for i in range(0, 60, 30)]
+url_list_Chiayi = ['https://www.tripadvisor.com.tw/Hotels-g297904-oa{}-Chiayi-Hotels.html'.format(str(i)) for i in range(0, 150, 30)]
 all_data = []
 
-for k in range(0, 40):
-    hotel_url, hotels_data = get_hotel(url_list_Yilan[k])
+for k in range(0, 4):
+    hotel_url, hotels_data = get_hotel(url_list_Chiayi[k])
     all_data = all_data + hotels_data
 
 data_df = pd.DataFrame.from_dict(all_data)
-data_df.to_csv('./Yilan_tripadvisor_top500.csv', index=False, encoding='utf_8_sig')
+data_df.to_csv('./Chiayi_tripadvisor_top500.csv', index=False, encoding='utf_8_sig')
