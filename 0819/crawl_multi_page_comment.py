@@ -25,8 +25,14 @@ def get_comments(url_list, start=0):
         sleep(2)
         web = webdriver.Chrome('../chromedriver.exe', options=options)
         # web.implicitly_wait(15)
-        web.get(url)
-        soup = BeautifulSoup(web.page_source, 'html.parser')
+        try:
+            web.get(url)
+            soup = BeautifulSoup(web.page_source, 'html.parser')
+        except:
+            # 紀錄timeout的 url
+            with open("./err.txt", "w", encoding='UTF-8') as myfile:
+                myfile.write(all_uri[i]+'\n')
+            continue
 
         # 確認留言頁數
         lat_page = soup.select('a.pageNum.last')
@@ -164,9 +170,9 @@ def get_comments(url_list, start=0):
     return data_list
 
 
-all_data = get_comments(all_uri[:100], 100)
+all_data = get_comments(all_uri[:10], 0)
 new_df = pd.DataFrame.from_dict(all_data)
-new_df.to_csv('./tapei_tripadvisor_top100hotel_comment.csv', index=False, encoding='utf_8_sig')
+new_df.to_csv('./tapei_tripadvisor_top10hotel_comment.csv', index=False, encoding='utf_8_sig')
 # old_df = pd.read_csv('tapei_tripadvisor_top20hotel_comment.csv')
 # data_df = pd.concat([new_df, old_df], ignore_index=True)
 # data_df.to_csv('./tapei_tripadvisor_top300hotel_comment.csv', index=False, encoding='utf_8_sig')
