@@ -2,8 +2,12 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from time import sleep
+import sys
+import traceback
 import pandas as pd
-df = pd.read_csv('../../19\' summer vacation/0806/tapei_tripadvisor_top300.csv')
+import re
+
+df = pd.read_csv('F:/volume/19\' summer vacation/0821/taipei_tripadvisor_top500_clean.csv')
 all_hotel = df['title'].to_list()
 all_uri = df['uri'].to_list()
 
@@ -13,9 +17,11 @@ options.add_argument("--incognito --headless")
 
 
 # 抓取同一間飯店多頁的評論
-def get_comments(url_list):
+def get_comments(url_list, start=0):
     data_list = []
     for i, url in enumerate(url_list):
+        # 考慮從第幾間飯店開始
+        i += start
         sleep(2)
         web = webdriver.Chrome('../chromedriver.exe', options=options)
         # web.implicitly_wait(15)
@@ -25,11 +31,17 @@ def get_comments(url_list):
         # 確認留言頁數
         lat_page = soup.select('a.pageNum.last')
         if len(lat_page) > 0:
-            # 新版頁面
-            max_page = int(lat_page[0].get('data-page-number'))
+            try:
+                # 新版頁面
+                max_page = int(lat_page[0].get('data-page-number'))
+            except:
+                max_page = 1
         else:
-            # 考慮舊版頁面
-            max_page = int(soup.select('a.pageNum')[-1].get_text())
+            try:
+                # 考慮舊版頁面
+                max_page = int(soup.select('a.pageNum')[-1].get_text())
+            except:
+                max_page = 1
 
         username = []
         userLink = []
@@ -37,7 +49,8 @@ def get_comments(url_list):
         page_count = 1
         try:
             # 如果還能換頁
-            while 'Hotel_Review' in soup.select('a.ui_button.nav.next.primary')[0].get('href'):
+            # while 'Hotel_Review' in soup.select('a.ui_button.nav.next.primary')[0].get('href'):
+            while True:
                 page_data = []
                 page_count += 1
                 # 確保網頁的ui已經跑完
@@ -61,7 +74,25 @@ def get_comments(url_list):
                         data['userName'] = comment.select('a.ui_header_link.social-member-event-MemberEventOnObjectBlock__member--35-jC')[0].get_text()
                         # profile
                         data['user_profile'] = 'https://www.tripadvisor.com.tw' + comment.select('a.ui_header_link.social-member-event-MemberEventOnObjectBlock__member--35-jC')[0].get('href')
+                        try:
+                            rating_str = re.findall('bubble_\d+', ''.join(comment.select('span.ui_bubble_rating')[0].get('class')))
+                            # 該評論給飯店幾分 
+                            data['rating'] = int(rating_str[0].split('_')[1]) / 10
+                        except:
+                            pass
 
+                        try:
+                            # 哪裡人(不一定會有)
+                            data['country'] = comment.select('span.social-member-common-MemberHometown__hometown--3kM9S')[0].get_text()
+                        except:
+                            pass
+
+                        try:
+                            # 幾個人推薦該評論
+                            data['recommend_count'] = comment.select('span.social-member-MemberHeaderStats__bold--3z3qh')[1].get_text()
+                        except:
+                            pass
+                        
                         # list contains a reference to the original dictionary
                         page_data.append(data)
 
@@ -83,12 +114,31 @@ def get_comments(url_list):
                         data['userName'] = comment.select('div.info_text')[0].div.get_text()
                         # user profile
                         data['user_profile'] = 'https://www.tripadvisor.com.tw/Profile/' + comment.select('div.info_text')[0].div.get_text()
+                        try:
+                            rating_str = re.findall('bubble_\d+', ''.join(comment.select('span.ui_bubble_rating')[0].get('class')))
+                            # 該評論給飯店幾分 
+                            data['rating'] = int(rating_str[0].split('_')[1]) / 10
+                        except:
+                            pass
+
+                        try:
+                            # 哪裡人 (新UI可能會有)
+                            data['country'] = comment.select('div.userLoc')[0].get_text()
+                        except:
+                            pass
+
+                        try:
+                            # 幾個人推薦該評論
+                            data['recommend_count'] = comment.select('span.ui_icon.thumbs-up-fill')[0].nextSibling('span')[0].get_text()
+                        except:
+                            pass
+                        
                         # 複製一份給list
                         page_data.append(data.copy())
 
                 data_list.extend(page_data)
 
-                if page_count == max_page:
+                if page_count >= max_page:
                     print('繁體中文評論頁數: ' + str(page_count))
                     break
                 else:
@@ -98,16 +148,25 @@ def get_comments(url_list):
                     soup = BeautifulSoup(web.page_source, 'html.parser')
 
         except Exception as e:
-            print(e)
+            # print(e)
+            error_class = e.__class__.__name__ #取得錯誤類型
+            detail = e.args[0] #取得詳細內容
+            cl, exc, tb = sys.exc_info() #取得Call Stack
+            lastCallStack = traceback.extract_tb(tb)[-1] #取得Call Stack的最後一筆資料
+            fileName = lastCallStack[0] #取得發生的檔案名稱
+            lineNum = lastCallStack[1] #取得發生的行號
+            funcName = lastCallStack[2] #取得發生的函數名稱
+            errMsg = "File \"{}\", line {}, in {}: [{}] {}".format(fileName, lineNum, funcName, error_class, detail)
+            print(errMsg)
             print(all_hotel[i] + ' 超過總評論頁數')
-            break
 
     web.close()
     return data_list
 
-all_data = get_comments([all_uri[2]])
+
+all_data = get_comments(all_uri[:100], 100)
 new_df = pd.DataFrame.from_dict(all_data)
-print(new_df.head())
+new_df.to_csv('./tapei_tripadvisor_top100hotel_comment.csv', index=False, encoding='utf_8_sig')
 # old_df = pd.read_csv('tapei_tripadvisor_top20hotel_comment.csv')
 # data_df = pd.concat([new_df, old_df], ignore_index=True)
 # data_df.to_csv('./tapei_tripadvisor_top300hotel_comment.csv', index=False, encoding='utf_8_sig')
