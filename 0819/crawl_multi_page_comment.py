@@ -170,9 +170,8 @@ def get_comments(url_list, start=0):
     return data_list
 
 
-all_data = get_comments(all_uri[:10], 0)
+all_data = get_comments(all_uri[100:200], 100)
 new_df = pd.DataFrame.from_dict(all_data)
-new_df.to_csv('./tapei_tripadvisor_top10hotel_comment.csv', index=False, encoding='utf_8_sig')
-# old_df = pd.read_csv('tapei_tripadvisor_top20hotel_comment.csv')
-# data_df = pd.concat([new_df, old_df], ignore_index=True)
-# data_df.to_csv('./tapei_tripadvisor_top300hotel_comment.csv', index=False, encoding='utf_8_sig')
+old_df = pd.read_csv('tapei_tripadvisor_top100hotel_comment.csv')
+data_df = pd.concat([new_df, old_df], ignore_index=True, sort=False)
+data_df.to_csv('./tapei_tripadvisor_top200hotel_comment.csv', index=False, encoding='utf_8_sig')
