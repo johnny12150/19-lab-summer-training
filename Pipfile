@@ -26,6 +26,7 @@ beautifulsoup4 = "*"
 graphviz = "*"
 pydot = "*"
 plotly = "*"
+jieba = "*"
 
 [requires]
 python_version = "3.7"
