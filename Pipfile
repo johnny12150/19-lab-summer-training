@@ -27,6 +27,7 @@ graphviz = "*"
 pydot = "*"
 plotly = "*"
 jieba = "*"
+keras-self-attention = "*"
 
 [requires]
 python_version = "3.7"
