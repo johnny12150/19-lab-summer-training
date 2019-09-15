@@ -196,4 +196,4 @@ for k in range(0, 4):
     all_data = all_data + hotels_data
 
 data_df = pd.DataFrame.from_dict(all_data)
-data_df.to_csv('./Chiayi_tripadvisor_top500.csv', index=False, encoding='utf_8_sig')
+data_df.to_csv('./Chiayi_tripadvisor_top100.csv', index=False, encoding='utf_8_sig')
