@@ -87,8 +87,23 @@ def get_services(url):
                 if price.previous_sibling:
                     current_lowest_price = price.get_text()
 
+    gmap_lat = None
+    gmap_lng = None
+    try:
+        RecentJs = soup.findAll(attrs={'type': 'text/javascript'}, string=re.compile(r"taStore.store\('typeahead.recentHistoryList',"))
+        for m in RecentJs:
+            # 包含飯店GPS的區域
+            # print(json.loads(m.text.split("\'typeahead.recentHistoryList\', ")[1].split('taStore.store(\'typeahead.restaurant\'')[0].split(');')[0]))
+            geo_data = json.loads(m.text.split("\'typeahead.recentHistoryList\', ")[1].split('taStore.store(\'typeahead.restaurant\'')[0].split(');')[0])
+            # 經緯度
+            # print(geo_data[0]['coords'])
+            gmap_lat = geo_data[0]['coords'].split(',')[0]
+            gmap_lng = geo_data[0]['coords'].split(',')[1]
+    except:
+        pass
+
     # 回傳飯店小細節的text(可以parser成json)
-    return service_list, facility_list, hotel_data, hotel_star_int, hotel_city, current_lowest_price
+    return service_list, facility_list, hotel_data, hotel_star_int, hotel_city, current_lowest_price, gmap_lat, gmap_lng
 
 
 def get_hotel(url):
@@ -126,7 +141,7 @@ def get_hotel(url):
             data['lng'] = None
 
         # 根據uri抓飯店細節 (新舊版介面共用)
-        facility_list, service_list, per_hotel_json, stars, city, pricing = get_services(data['uri'])
+        facility_list, service_list, per_hotel_json, stars, city, pricing, g_lat, g_lng = get_services(data['uri'])
         try:
             # 確保有值
             if pricing:
@@ -169,6 +184,9 @@ def get_hotel(url):
         except:
             pass
 
+        data['gmap_lat'] = g_lat
+        data['gmap_lng'] = g_lng
+
         uri_list.append(data['uri'])
         data_list.append(data)
 
@@ -191,9 +209,9 @@ url_list_Keelung = ['https://www.tripadvisor.com.tw/Hotels-g317130-oa{}-Keelung-
 url_list_Chiayi = ['https://www.tripadvisor.com.tw/Hotels-g297904-oa{}-Chiayi-Hotels.html'.format(str(i)) for i in range(0, 150, 30)]
 all_data = []
 
-for k in range(0, 4):
-    hotel_url, hotels_data = get_hotel(url_list_Chiayi[k])
+for k in range(0, 30):
+    hotel_url, hotels_data = get_hotel(url_list_Tainan[k])
     all_data = all_data + hotels_data
 
 data_df = pd.DataFrame.from_dict(all_data)
-data_df.to_csv('./Chiayi_tripadvisor_top100.csv', index=False, encoding='utf_8_sig')
+data_df.to_csv('./Tainan_tripadvisor_top1500.csv', index=False, encoding='utf_8_sig')
