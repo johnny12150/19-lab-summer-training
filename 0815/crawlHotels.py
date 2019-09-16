@@ -44,7 +44,7 @@ def get_services(url):
         for i, service in enumerate(service_data_new[0].select('.sub_content.ui_columns.is-multiline.is-gapless.is-mobile')):
             service_list.append(service.select('.entry.ui_column.is-4-tablet.is-6-mobile.is-4-desktop')[0].get_text())
 
-    # 舊版介面
+    # FIXME:舊版介面
     if len(service_data) > 0:
         # 設施
         for i, service in enumerate(service_data[0].select('.hotels-hr-about-amenities-Amenity__amenity--3fbBj')):
@@ -54,6 +54,38 @@ def get_services(url):
             # 房間特色
             for j, room in enumerate(service_data[1].select('.hotels-hr-about-amenities-Amenity__amenity--3fbBj')):
                 service_list.append(room.get_text())
+
+        room_style_list = []
+        hotel_service_list = []
+        # TODO: 更新舊版介面能取得的資訊
+        for k, data in enumerate(soup.select('div.ssr-init-26f')):
+            room_data = data.get('data-ssrev-handlers')
+            # 如果有存data
+            if len(room_data) > 0:
+                json_room_data = json.loads(room_data)
+                if json_room_data:
+                    # 如果data裡面包含 @ta/hotels.hr-about-amenities
+                    if json_room_data['load'][1] == "@ta/hotels.hr-about-amenities":
+                        room_detail = json_room_data['load'][3]
+                        # 房型與房內設備
+                        # print(len(room_detail['amenities']['highlightedAmenities']['roomAmenities']))
+                        for room_style in room_detail['amenities']['highlightedAmenities']['roomAmenities']:
+                            room_style_list.append(room_style['amenityNameLocalized'])
+                        print(room_style_list)
+                        
+                        # 飯店硬體設施
+                        # print(len(room_detail['amenities']['highlightedAmenities']['propertyAmenities']))
+                        for room_service in room_detail['amenities']['highlightedAmenities']['propertyAmenities']:
+                            hotel_service_list.append(room_service['amenityNameLocalized'])
+                        print(hotel_service_list)
+
+                        # 沒有直接寫在網頁上的
+                        # print(len(room_detail['amenities']['nonHighlightedAmenities']['roomAmenities']))
+                        for room_style in room_detail['amenities']['nonHighlightedAmenities']['roomAmenities']:
+                            room_style_list.append(room_style['amenityNameLocalized'])
+                        print(room_style_list)
+                        
+                        print(len(room_detail['amenities']['nonHighlightedAmenities']['propertyAmenities']))
 
     try:
         hotel_data = json.loads(meta_data[0].get_text())
@@ -210,8 +242,8 @@ url_list_Chiayi = ['https://www.tripadvisor.com.tw/Hotels-g297904-oa{}-Chiayi-Ho
 all_data = []
 
 for k in range(0, 30):
-    hotel_url, hotels_data = get_hotel(url_list_Tainan[k])
+    hotel_url, hotels_data = get_hotel(url_list_taipei[k])
     all_data = all_data + hotels_data
 
 data_df = pd.DataFrame.from_dict(all_data)
-data_df.to_csv('./Tainan_tripadvisor_top1500.csv', index=False, encoding='utf_8_sig')
+# data_df.to_csv('./taipei_tripadvisor_top1500.csv', index=False, encoding='utf_8_sig')
