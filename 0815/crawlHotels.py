@@ -33,31 +33,32 @@ def get_services(url):
     except:
         hotel_star_int = None
 
-    # 考量新的版面
+    # FIXME:考量新的版面
     if len(service_data_new) > 0:
+        # 針對電腦版網頁顯示的內容
+        desktop_hotel_info = soup.select('div[class="ui_column is-3 is-shown-at-desktop"]')
         # 客房類型
-        for i, room in enumerate(service_data_new):
+        for i, room in enumerate(desktop_hotel_info[0].select('div.sub_title')):
             if room.get_text() == '客房類型':
                 facility_list.append(room.nextSibling('div')[0].get_text())
 
         # 服務/ 特色
-        for i, service in enumerate(service_data_new[0].select('.sub_content.ui_columns.is-multiline.is-gapless.is-mobile')):
-            service_list.append(service.select('.entry.ui_column.is-4-tablet.is-6-mobile.is-4-desktop')[0].get_text())
+        for i, service in enumerate(service_data_new[0].select('.entry.ui_column.is-4-tablet.is-6-mobile.is-4-desktop')):
+            service_list.append(service.get_text())
 
-    # FIXME:舊版介面
+    # 舊版介面
     if len(service_data) > 0:
-        # 設施
-        for i, service in enumerate(service_data[0].select('.hotels-hr-about-amenities-Amenity__amenity--3fbBj')):
-            facility_list.append(service.get_text())
+        # 舊的抓取方式
+        # # 設施
+        # for i, service in enumerate(service_data[0].select('.hotels-hr-about-amenities-Amenity__amenity--3fbBj')):
+        #     facility_list.append(service.get_text())
 
-        if len(service_data) > 1:
-            # 房間特色
-            for j, room in enumerate(service_data[1].select('.hotels-hr-about-amenities-Amenity__amenity--3fbBj')):
-                service_list.append(room.get_text())
+        # if len(service_data) > 1:
+        #     # 房間特色
+        #     for j, room in enumerate(service_data[1].select('.hotels-hr-about-amenities-Amenity__amenity--3fbBj')):
+        #         service_list.append(room.get_text())
 
-        room_style_list = []
-        hotel_service_list = []
-        # TODO: 更新舊版介面能取得的資訊
+        # 更新舊版介面能取得的資訊，能夠取得更多資訊
         for k, data in enumerate(soup.select('div.ssr-init-26f')):
             room_data = data.get('data-ssrev-handlers')
             # 如果有存data
@@ -68,24 +69,19 @@ def get_services(url):
                     if json_room_data['load'][1] == "@ta/hotels.hr-about-amenities":
                         room_detail = json_room_data['load'][3]
                         # 房型與房內設備
-                        # print(len(room_detail['amenities']['highlightedAmenities']['roomAmenities']))
                         for room_style in room_detail['amenities']['highlightedAmenities']['roomAmenities']:
-                            room_style_list.append(room_style['amenityNameLocalized'])
-                        print(room_style_list)
+                            facility_list.append(room_style['amenityNameLocalized'])
                         
                         # 飯店硬體設施
-                        # print(len(room_detail['amenities']['highlightedAmenities']['propertyAmenities']))
                         for room_service in room_detail['amenities']['highlightedAmenities']['propertyAmenities']:
-                            hotel_service_list.append(room_service['amenityNameLocalized'])
-                        print(hotel_service_list)
+                            service_list.append(room_service['amenityNameLocalized'])
 
                         # 沒有直接寫在網頁上的
-                        # print(len(room_detail['amenities']['nonHighlightedAmenities']['roomAmenities']))
                         for room_style in room_detail['amenities']['nonHighlightedAmenities']['roomAmenities']:
-                            room_style_list.append(room_style['amenityNameLocalized'])
-                        print(room_style_list)
+                            facility_list.append(room_style['amenityNameLocalized'])
                         
-                        print(len(room_detail['amenities']['nonHighlightedAmenities']['propertyAmenities']))
+                        for room_service in room_detail['amenities']['nonHighlightedAmenities']['propertyAmenities']:
+                            service_list.append(room_service['amenityNameLocalized'])
 
     try:
         hotel_data = json.loads(meta_data[0].get_text())
@@ -246,4 +242,4 @@ for k in range(0, 30):
     all_data = all_data + hotels_data
 
 data_df = pd.DataFrame.from_dict(all_data)
-# data_df.to_csv('./taipei_tripadvisor_top1500.csv', index=False, encoding='utf_8_sig')
+data_df.to_csv('./Taipei_tripadvisor_top1500.csv', index=False, encoding='utf_8_sig')
