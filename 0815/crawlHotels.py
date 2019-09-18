@@ -237,9 +237,9 @@ url_list_Keelung = ['https://www.tripadvisor.com.tw/Hotels-g317130-oa{}-Keelung-
 url_list_Chiayi = ['https://www.tripadvisor.com.tw/Hotels-g297904-oa{}-Chiayi-Hotels.html'.format(str(i)) for i in range(0, 150, 30)]
 all_data = []
 
-for k in range(0, 30):
-    hotel_url, hotels_data = get_hotel(url_list_taipei[k])
+for k in range(0, 15):
+    hotel_url, hotels_data = get_hotel(url_list_Kaohsiung[k])
     all_data = all_data + hotels_data
 
 data_df = pd.DataFrame.from_dict(all_data)
-data_df.to_csv('./Taipei_tripadvisor_top1500.csv', index=False, encoding='utf_8_sig')
+data_df.to_csv('./Kaohsiung_tripadvisor_top500.csv', index=False, encoding='utf_8_sig')
