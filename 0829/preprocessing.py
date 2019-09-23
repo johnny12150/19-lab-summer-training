@@ -35,15 +35,15 @@ for j, user_set in enumerate(user_hotels):
 num_neg = 5
 df_feature_neg = pd.DataFrame()
 df_label_neg = np.zeros(num_neg* len(df['user_id(phone)'].unique()))
-# FIXME: 從每個使用者沒住過的飯店隨機取5個
+# 從每個使用者沒住過的飯店隨機取5個
 for i, user in enumerate(user_ids):
     random_list = []
-    # 隨機取五個沒住過的hotel_id, 避免隨機到重覆值
+    # 隨機取五個沒住過的hotel_id, replace=False 避免隨機到重覆值
     random_list = np.random.choice(user_new_hotels[i], num_neg, replace=False)
-    for j, hotel in enumerate(random_list):
-        neg_hotel = df.loc[(df['hotel_id'] == hotel)].head(1)
-        neg_hotel['user_id(phone)'] = user
-        df_feature_neg = df_feature_neg.append(neg_hotel)
+    # 隨機取5筆符合條件的 (大幅加速)
+    neg_hotel = df[df['hotel_id'].isin(random_list)].sample(5)
+    neg_hotel['user_id(phone)'] = user
+    df_feature_neg = df_feature_neg.append(neg_hotel)
 
     # if len(user_hotels[i]) == 1:
         # 符合使用者與飯店的資料
