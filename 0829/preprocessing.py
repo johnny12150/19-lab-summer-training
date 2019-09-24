@@ -3,6 +3,7 @@ import numpy as np
 from scipy import stats
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder, StandardScaler
 from CTR_LR_keras import *
+import time
 
 df = pd.read_csv("F:/NCTU/lab/奧丁丁/奧丁丁資料前處理/OwlTing_整合資料/csv/final_data.csv")
 
@@ -33,7 +34,7 @@ for j, user_set in enumerate(user_hotels):
     user_new_hotels.append(np.setdiff1d(unique_hotels, np.array(user_set)))
 
 num_neg = 5
-df_feature_neg = pd.DataFrame()
+df_feature_neg_list = []
 df_label_neg = np.zeros(num_neg* len(df['user_id(phone)'].unique()))
 # 從每個使用者沒住過的飯店隨機取5個
 for i, user in enumerate(user_ids):
@@ -43,12 +44,14 @@ for i, user in enumerate(user_ids):
     # 隨機取5筆符合條件的 (大幅加速)
     neg_hotel = df[df['hotel_id'].isin(random_list)].sample(5)
     neg_hotel['user_id(phone)'] = user
-    df_feature_neg = df_feature_neg.append(neg_hotel)
+    df_feature_neg_list.extend(neg_hotel.values.tolist())
 
     # if len(user_hotels[i]) == 1:
         # 符合使用者與飯店的資料
         # df.loc[(df['hotel_id'] == user_hotels[i][0]) & (df['user_id(phone)'] == user)]
 
+df_feature_neg = pd.DataFrame(columns=df.columns.tolist())
+df_feature_neg = pd.DataFrame(df_feature_neg_list, columns=df.columns.tolist())
 # 僅保留特定特徵
 df_feature = df_feature.append(df_feature_neg[['user_id(phone)', 'source', 'night_amount', 'latitude', 'longitude']])
 df_label = np.append(df_label, df_label_neg)        
